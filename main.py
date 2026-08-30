@@ -5,6 +5,7 @@ import sys
 # then map every char of the TEXT line. Missing chars -> -1.
 alphabet = ""
 text = ""
+
 for raw in sys.stdin:
     line = raw.rstrip("\n")
     if line.startswith("ALPHABET "):
@@ -12,7 +13,14 @@ for raw in sys.stdin:
     elif line.startswith("TEXT "):
         text = line[len("TEXT "):]
 
-# TODO: build the alphabet->index map and emit comma-separated ids.
-lookup = {ch: i for i, ch in enumerate(alphabet)}
-ids = [lookup.get(ch, -1) for ch in text]
-print(",".join(str(n) for n in ids))
+char_to_id = {}
+
+for i, char in enumerate(alphabet):
+    char_to_id[char] = i
+
+tokens = []
+
+for char in text:
+    tokens.append(char_to_id.get(char, -1))
+
+print(",".join(map(str, tokens)))
