@@ -13,3 +13,6 @@ for raw in sys.stdin:
         text = line[len("TEXT "):]
 
 # TODO: build the alphabet->index map and emit comma-separated ids.
+lookup = {ch: i for i, ch in enumerate(alphabet)}
+ids = [lookup.get(ch, -1) for ch in text]
+print(",".join(str(n) for n in ids))
