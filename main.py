@@ -1,47 +1,50 @@
+import sys, math
 
-import sys
-import math
+# Sinusoidal positional encoding.
+# For each "PE <pos> <d_model>" line emit d_model floats:
+#   even dim -> sin(pos / 10000^(2k/d_model))
+#   odd dim  -> cos(pos / 10000^(2k/d_model))
+# Round to 4 decimals.
 
-# Default value of epsilon
-EPS = 1e-5
-
-# Read input line by line
 for raw in sys.stdin:
 
-    # Remove the newline and extra spaces
     line = raw.rstrip("\n").strip()
 
-    # Ignore empty lines
-    if not line:
+    if not line or not line.startswith("PE "):
         continue
 
-    # If the line changes EPS
-    if line.startswith("EPS "):
-        EPS = float(line[4:])
+    # Parse position and model dimension
+    parts = line.split()
 
-    # If the line contains a vector to normalize
-    elif line.startswith("NORM "):
+    pos = int(parts[1])
+    d_model = int(parts[2])
 
-        # Get everything after "NORM "
-        # Split by comma
-        # Convert each value from string to float
-        x = [float(v) for v in line[5:].split(",")]
+    # Store the positional encoding values
+    values = []
 
-        # Number of features
-        D = len(x)
+    # Calculate PE for every dimension
+    for i in range(d_model):
 
-        # 1. Calculate the mean
-        mean = sum(x) / D
+        # i = 0,1 -> k = 0
+        # i = 2,3 -> k = 1
+        # i = 4,5 -> k = 2
+        k = i // 2
 
-        # 2. Calculate the variance
-        var = sum((v - mean) ** 2 for v in x) / D
+        # Calculate 10000^(2k / d_model)
+        denominator = 10000 ** (2 * k / d_model)
 
-        # 3. Calculate the denominator
-        denominator = math.sqrt(var + EPS)
+        # Calculate pos / denominator
+        angle = pos / denominator
 
-        # 4. Normalize every value
-        y = [(v - mean) / denominator for v in x]
+        # Even dimensions use sin
+        # Odd dimensions use cos
+        if i % 2 == 0:
+            value = math.sin(angle)
+        else:
+            value = math.cos(angle)
 
-        # 5. Print each value with exactly 4 decimal places
-        print(",".join(f"{v:.4f}" for v in y))
+        values.append(value)
+
+    # Print comma-separated values with 4 decimal places
+    print(",".join(f"{v:.4f}" for v in values))
 
