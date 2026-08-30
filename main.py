@@ -1,26 +1,33 @@
 import sys
 
-# Character-level tokenizer.
-# Parse the ALPHABET line, build a char -> index map,
-# then map every char of the TEXT line. Missing chars -> -1.
-alphabet = ""
-text = ""
+vocab_size = 0
+embedding_dim = 0
+embedding_table = []
+tokens = []
 
 for raw in sys.stdin:
     line = raw.rstrip("\n")
-    if line.startswith("ALPHABET "):
-        alphabet = line[len("ALPHABET "):]
-    elif line.startswith("TEXT "):
-        text = line[len("TEXT "):]
 
-char_to_id = {}
+    if line.startswith("VOCAB "):
+        parts = line.split()
+        vocab_size = int(parts[1])
+        embedding_dim = int(parts[3])
 
-for i, char in enumerate(alphabet):
-    char_to_id[char] = i
+        # Read the next V lines containing the embedding table
+        for _ in range(vocab_size):
+            row_line = next(sys.stdin).rstrip("\n")
+            row = [float(x) for x in row_line.split(",")]
+            embedding_table.append(row)
 
-tokens = []
+    elif line.startswith("TOKENS "):
+        token_text = line[len("TOKENS "):]
+        tokens = [int(x) for x in token_text.split(",")]
 
-for char in text:
-    tokens.append(char_to_id.get(char, -1))
+for token_id in tokens:
+    if 0 <= token_id < vocab_size:
+        row = embedding_table[token_id]
+    else:
+        row = [0.0] * embedding_dim
 
-print(",".join(map(str, tokens)))
+    formatted = [f"{x:.4f}" for x in row]
+    print(",".join(formatted))
