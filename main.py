@@ -1,33 +1,47 @@
+
 import sys
+import math
 
-vocab_size = 0
-embedding_dim = 0
-embedding_table = []
-tokens = []
+# Default value of epsilon
+EPS = 1e-5
 
+# Read input line by line
 for raw in sys.stdin:
-    line = raw.rstrip("\n")
 
-    if line.startswith("VOCAB "):
-        parts = line.split()
-        vocab_size = int(parts[1])
-        embedding_dim = int(parts[3])
+    # Remove the newline and extra spaces
+    line = raw.rstrip("\n").strip()
 
-        # Read the next V lines containing the embedding table
-        for _ in range(vocab_size):
-            row_line = next(sys.stdin).rstrip("\n")
-            row = [float(x) for x in row_line.split(",")]
-            embedding_table.append(row)
+    # Ignore empty lines
+    if not line:
+        continue
 
-    elif line.startswith("TOKENS "):
-        token_text = line[len("TOKENS "):]
-        tokens = [int(x) for x in token_text.split(",")]
+    # If the line changes EPS
+    if line.startswith("EPS "):
+        EPS = float(line[4:])
 
-for token_id in tokens:
-    if 0 <= token_id < vocab_size:
-        row = embedding_table[token_id]
-    else:
-        row = [0.0] * embedding_dim
+    # If the line contains a vector to normalize
+    elif line.startswith("NORM "):
 
-    formatted = [f"{x:.4f}" for x in row]
-    print(",".join(formatted))
+        # Get everything after "NORM "
+        # Split by comma
+        # Convert each value from string to float
+        x = [float(v) for v in line[5:].split(",")]
+
+        # Number of features
+        D = len(x)
+
+        # 1. Calculate the mean
+        mean = sum(x) / D
+
+        # 2. Calculate the variance
+        var = sum((v - mean) ** 2 for v in x) / D
+
+        # 3. Calculate the denominator
+        denominator = math.sqrt(var + EPS)
+
+        # 4. Normalize every value
+        y = [(v - mean) / denominator for v in x]
+
+        # 5. Print each value with exactly 4 decimal places
+        print(",".join(f"{v:.4f}" for v in y))
+
